@@ -1,8 +1,12 @@
 package module
 
 import (
+	"archive/tar"
+	"fmt"
+	"io"
 	"sort"
 	"strings"
+	"time"
 
 	version "github.com/hashicorp/go-version"
 	git "gopkg.in/libgit2/git2go.v24"
@@ -115,4 +119,86 @@ func (m Module) HasVersion(v *version.Version) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// WriteVersionTar recursively writes the contents of the git tree associated
+// with the given version to the given writer. If no such version exists,
+// or if there are any other problems when reading the tree, the resulting
+// tar archive may be incomplete.
+func (m Module) WriteVersionTar(v *version.Version, w io.Writer) error {
+	tw := tar.NewWriter(w)
+	defer tw.Close()
+
+	refName := fmt.Sprintf("refs/tags/v%s", v)
+	ref, err := m.repo.References.Lookup(refName)
+	if err != nil {
+		return err
+	}
+
+	commitObj, err := ref.Peel(git.ObjectCommit)
+	if err != nil {
+		return err
+	}
+	commit, err := commitObj.AsCommit()
+	if err != nil {
+		return err
+	}
+
+	committer := commit.Committer()
+	commitTime := committer.When
+	rootTree, err := commit.Tree()
+	if err != nil {
+		return err
+	}
+
+	return m.writeGitTreeTar(rootTree, "", commitTime, tw)
+}
+
+func (m Module) writeGitTreeTar(tree *git.Tree, prefix string, modTime time.Time, tw *tar.Writer) error {
+	ct := tree.EntryCount()
+
+	for i := uint64(0); i < ct; i++ {
+		entry := tree.EntryByIndex(i)
+		switch entry.Type {
+		case git.ObjectTree:
+			newPrefix := prefix + entry.Name + "/"
+			tw.WriteHeader(&tar.Header{
+				Name:       newPrefix,
+				Mode:       0755,
+				Typeflag:   tar.TypeDir,
+				ChangeTime: modTime,
+				AccessTime: modTime,
+				ModTime:    modTime,
+			})
+			newTree, err := m.repo.LookupTree(entry.Id)
+			if err != nil {
+				continue
+			}
+			err = m.writeGitTreeTar(newTree, newPrefix, modTime, tw)
+			if err != nil {
+				return err
+			}
+		case git.ObjectBlob:
+			blob, err := m.repo.LookupBlob(entry.Id)
+			if err != nil {
+				return err
+			}
+
+			tw.WriteHeader(&tar.Header{
+				Name:       prefix + entry.Name,
+				Mode:       int64(entry.Filemode),
+				Typeflag:   tar.TypeReg,
+				Size:       blob.Size(),
+				ChangeTime: modTime,
+				AccessTime: modTime,
+				ModTime:    modTime,
+			})
+			_, err = tw.Write(blob.Contents())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

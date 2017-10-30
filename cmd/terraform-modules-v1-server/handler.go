@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archive/tar"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -184,11 +183,7 @@ func makeHandler(modules config.Modules) http.Handler {
 
 		wr.Header().Set("Content-Type", "application/x-tar")
 		wr.WriteHeader(200)
-		tw := tar.NewWriter(wr)
-
-		// TODO: Copy all the entries recursively from this version's git tree
-
-		tw.Close()
+		mod.WriteVersionTar(v, wr)
 	})
 
 	ret.HandleFunc("/{namespace}/{name}/{provider}/{version}", func(wr http.ResponseWriter, req *http.Request) {
