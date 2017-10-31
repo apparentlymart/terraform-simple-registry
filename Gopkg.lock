@@ -44,6 +44,12 @@
   revision = "44bad6dbf5490f5da17ec991e664df3d017b706f"
 
 [[projects]]
+  name = "github.com/hashicorp/terraform"
+  packages = ["svchost"]
+  revision = "e0fd3ddd704b230897723a7ca251f36b71c2b67a"
+  version = "v0.10.8"
+
+[[projects]]
   branch = "master"
   name = "github.com/mitchellh/go-wordwrap"
   packages = ["."]
@@ -63,6 +69,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/net"
+  packages = ["idna"]
+  revision = "c73622c77280266305273cb545f54516ced95b93"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
   revision = "661970f62f5897bc0cd5fdca7e087ba8a98a8fa1"
@@ -70,7 +82,7 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
-  packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
+  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
   revision = "6eab0e8f74e86c598ec3b6fad4888e0c11482d48"
 
 [[projects]]
@@ -82,6 +94,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4670274d16a1c302f002a5d41d8308d4b880382f568dd9a6991e526fc2af2cfb"
+  inputs-digest = "34a3ddf23194a79deaa000fa191195bbcbbcc58c84bd9fec7e759bd26843280a"
   solver-name = "gps-cdcl"
   solver-version = 1
