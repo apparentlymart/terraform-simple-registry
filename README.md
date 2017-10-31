@@ -32,3 +32,38 @@ An "out-of-the-box" private registry solution, with support from HashiCorp,
 is available as part of [Terraform Enterprise](https://www.hashicorp.com/products/terraform).
 This implementation integrates well with other Terraform Enterprise
 features.
+
+## Included Servers
+
+The design of this codebase is to have a separate server program for each of
+the separate Terraform native service protocols it supports. The protocols
+currently supported are:
+
+* [Module registry v1](./cmd/terraform-modules-v1-server) (`modules.v1`)
+
+## Service Discovery
+
+Terraform uses a simple service discovery protocol to locate remote services
+when given a "friendly hostname" by the user. For example, the hostname at
+the start of a module source string like `example.com/foo/bar/baz` is such
+a hostname, causing Terraform to attempt service discovery on that host.
+
+The programs in this package each expose functionality for one of Terraform's
+supported services. It's your responsibility as the deployer to place a
+service discovery document on some suitable hostname to allow Terraform to
+find the services you've deployed. It is not required that the servers
+themselves be deployed at the same hostname.
+
+Terraform looks for a discovery document by accessing the given hostname with
+HTTPS and requesting the path `/.well-known/terraform.json`, at which it
+expects to find an `application/json` response with content like the following:
+
+```json
+{
+  "modules.v1": "http://modules.example.com/v1/"
+}
+```
+
+Each key in this object relates to a single service, which in turn maps to one
+server program in this repository. The documentation for each of the included
+servers (linked above) defines which service discovery key it relates to.
