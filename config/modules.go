@@ -3,13 +3,15 @@ package config
 import (
 	"fmt"
 
-	"github.com/hashicorp/hcl2/gohcl"
+	"github.com/hashicorp/terraform/svchost"
 
+	"github.com/hashicorp/hcl2/gohcl"
 	"github.com/hashicorp/hcl2/hcl"
 )
 
 // ModulesConfig is the root type of a configuration for a modules server.
 type ModulesConfig struct {
+	Hostname  svchost.Hostname
 	Listeners Listeners
 	Modules   Modules
 }
@@ -27,6 +29,10 @@ func LoadModulesConfig(body hcl.Body) (*ModulesConfig, hcl.Diagnostics) {
 	listeners, remain, listenersDiags := loadListenersConfig(body)
 	body = remain
 	diags = append(diags, listenersDiags...)
+
+	hostname, remain, hostnameDiags := loadHostnameConfig(body)
+	body = remain
+	diags = append(diags, hostnameDiags...)
 
 	schema := &hcl.BodySchema{
 		Blocks: []hcl.BlockHeaderSchema{
@@ -77,6 +83,7 @@ func LoadModulesConfig(body hcl.Body) (*ModulesConfig, hcl.Diagnostics) {
 	}
 
 	return &ModulesConfig{
+		Hostname:  hostname,
 		Listeners: listeners,
 		Modules:   modules,
 	}, diags
