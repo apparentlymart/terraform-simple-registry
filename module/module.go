@@ -121,6 +121,29 @@ func (m Module) HasVersion(v *version.Version) (bool, error) {
 	return false, nil
 }
 
+func (m Module) GetVersionTreeId(v *version.Version) (string, error) {
+	commit, err := m.getVersionCommit(v)
+	if err != nil {
+		return "", err
+	}
+
+	return commit.TreeId().String(), nil
+}
+
+func (m Module) getVersionCommit(v *version.Version) (*git.Commit, error) {
+	refName := fmt.Sprintf("refs/tags/v%s", v)
+	ref, err := m.repo.References.Lookup(refName)
+	if err != nil {
+		return nil, err
+	}
+
+	commitObj, err := ref.Peel(git.ObjectCommit)
+	if err != nil {
+		return nil, err
+	}
+	return commitObj.AsCommit()
+}
+
 // WriteVersionTar recursively writes the contents of the git tree associated
 // with the given version to the given writer. If no such version exists,
 // or if there are any other problems when reading the tree, the resulting
@@ -129,17 +152,7 @@ func (m Module) WriteVersionTar(v *version.Version, w io.Writer) error {
 	tw := tar.NewWriter(w)
 	defer tw.Close()
 
-	refName := fmt.Sprintf("refs/tags/v%s", v)
-	ref, err := m.repo.References.Lookup(refName)
-	if err != nil {
-		return err
-	}
-
-	commitObj, err := ref.Peel(git.ObjectCommit)
-	if err != nil {
-		return err
-	}
-	commit, err := commitObj.AsCommit()
+	commit, err := m.getVersionCommit(v)
 	if err != nil {
 		return err
 	}

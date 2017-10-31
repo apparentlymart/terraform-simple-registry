@@ -98,7 +98,7 @@ func realMain(args []string) int {
 		return 1
 	}
 
-	handler := makeHandler(cfg.Modules)
+	handler := makeHandler(cfg.Hostname, cfg.Modules)
 	cfg.Listeners.ListenAndServe(handler) // does not return
 
 	return 0
